@@ -6,35 +6,49 @@ num_moves = 10
 
 # Time is in Seconds
 min_time_press = 0.0
-max_time_press = 2.0
+max_time_press = 1.0
 min_time_release = 0.0
-max_time_release = 2.0
+max_time_release = 1.0
 
 
 class Participant():
 
 
-    def __init__(self, name):
+    def __init__(self, first_name, last_name, moves=None):
 
-        self.name = name
+        self.first_name = first_name
+        self.last_name = last_name
         self.fitness = 0.0
-        self.moves = []
+        self.current_move = 0
 
-        # Generate Random Move List
-        for i in range(num_moves):
-            keys = random.randint(0, 15)
-            time_press = min_time_press + random.random() * (max_time_press - min_time_press)
-            time_release = min_time_release + random.random() * (max_time_release - min_time_release)
-            self.moves.append(Move(keys, time_press, time_release))
+        if moves == None:
+            self.moves = []
+            # Generate Random Move List
+            for i in range(num_moves):
+                keys = random.randint(0, 15)
+                time_press = min_time_press + random.random() * (max_time_press - min_time_press)
+                time_release = min_time_release + random.random() * (max_time_release - min_time_release)
+                self.moves.append(Move(keys, time_press, time_release))
+        else:
+            self.moves = moves
+
+    def nextMove(self):
+        self.moves[self.current_move].execute()
+        self.current_move += 1
+        if self.current_move >= len(self.moves):
+            self.current_move = 0
 
     def move(self):
         for m in self.moves:
             m.execute()
 
+    def display_fitness(self):
+        print ('{} {}: {}'.format(self.first_name, self.last_name, self.fitness))
+
     def display(self):
         print ()
-        print ('Name: {}'.format(self.name))
-        print ('Fitness: {}'.format(self.fitness))
+        print ('Name: {} {}'.format(self.first_name, self.last_name))
+        print ('\tFitness: {}'.format(self.fitness))
         print ('\tMove List:')
         for m in self.moves:
             keys = ''
@@ -49,12 +63,6 @@ class Participant():
             print ('\t\tKeys: {}'.format(keys))
             print ('\t\t\tPress Time: {}'.format(m.time_press))
             print ('\t\t\tRelease Time: {}'.format(m.time_release)  )
-
-        
-
-
-
-
 
 
 class Move():

@@ -1,10 +1,14 @@
 import pytesseract
+import pyautogui as auto
 from mss import mss
 import cv2
 import numpy as np
 import population as pop
+import time
 
 sct = mss()
+
+seven_template = cv2.imread('seven.png', 0)
 # (X, Y, Width, Height) Box to capture
 
 #100% Zoom
@@ -18,43 +22,80 @@ medal_window = {'top': 33, 'bottom': 43, 'left': 33, 'right': 43}
 
 def run():
 
+    # Generate Initial Population
     pop.sixth_day(10)
-    pop.display_population()
 
-    running = False
-    while running:
+    generation = 0
+
+    # Wait for User to Press 'Space' (Start)
+    print ('Waiting for User to Start...')
+    img = np.array(sct.grab(mon))
+    while participant_lost(img):
         img = np.array(sct.grab(mon))
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    print ('Starting Evolution')
 
-        # Crop Text and Medal Windows
-        img_text = img_gray[text_window['top']:text_window['bottom'], text_window['left']:text_window['right']]
-        img_medal = img_hsv[medal_window['top']:medal_window['bottom'], medal_window['left']:medal_window['right'], :]
+    running = True # Literally Running
+    while running:
 
-        # Binarize Text
-        ret, text_binary = cv2.threshold(img_text, 127, 255, cv2.THRESH_BINARY)
+        generation += 1
+        print ('\nGeneration: {}'.format(generation))
 
-        # Look for Yellow Medal
-        medal_mean_hue = int(np.mean(np.mean(img_medal, axis=0), axis=0)[0] + .5)
-     
-        if medal_mean_hue == 30: # Participant Lost, Detected Yellow Medal
-            text = str(pytesseract.image_to_string(text_binary))
-           
-            text = text.replace(' ', '')
-            try:
-                raw_score = float(text[:len(text)-6])
-            except ValueError:
-                print ('Could not successfully read score')
-                raw_score = -1000
-                
-            
-            print ('Score: {}'.format(raw_score))
+        for participant in pop.participants:
+            auto.press('space') # Restart Race
+            img = np.array(sct.grab(mon))
 
-        #Press 'Q' to quit
-        if cv2.waitKey(25) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            break
+            # Execute Moves in Order Until Participant has Lost
+            while not participant_lost(img = np.array(sct.grab(mon))):
+                participant.nextMove()
+                img = np.array(sct.grab(mon))
 
+            # Read Score                       
+            img = np.array(sct.grab(mon))
+            score = read_score(img)
+            participant.fitness = score
+
+        pop.display_fitness()
+        pop.evolve()
+        time.sleep(1000)
+
+def read_score(img):
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Crop Text and Medal Windows
+    img_text = img_gray[text_window['top']:text_window['bottom'], text_window['left']:text_window['right']]
+
+    # Binarize Text
+    ret, text_binary = cv2.threshold(img_text, 127, 255, cv2.THRESH_BINARY)
+
+    text = str(pytesseract.image_to_string(text_binary))         
+    text = text.replace(' ', '')
+
+##    if '1' in text:
+##        res = cv2.matchTemplate(img_text, seven_template, cv2.TM_CCOEFF_NORMED)
+##        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+##        top_left = max_loc
+##        w, h = seven_template.shape[::-1]
+##        bottom_right = (top_left[0] + w, top_left[1] + h)
+##        print (res)
+##        print (cv2.minMaxLoc(res))
+##        cv2.rectangle(img_text,top_left, bottom_right, 255, 2)
+##        cv2.imshow('Text', img_text)
+##        cv2.waitKey(0)
+    try:
+        raw_score = float(text[:len(text)-6])
+    except ValueError:
+        print ('Could not successfully read score')
+        raw_score = -1000
+    return raw_score
+
+def participant_lost(img):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_medal = img_hsv[medal_window['top']:medal_window['bottom'], medal_window['left']:medal_window['right'], :]
+    # Look for Yellow Medal
+    medal_mean_hue = int(np.mean(np.mean(img_medal, axis=0), axis=0)[0] + .5)
+
+    # Participant Lost, Detected Yellow Medal
+    return medal_mean_hue == 30
 
 if __name__ == "__main__":
     run()
