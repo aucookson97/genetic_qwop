@@ -33,7 +33,7 @@ def child(parent1, parent2, algorithm):
         first_name = parent2.first_name
         last_name = parent1.last_name
     
-    if algorithm == 'Random':
+    if algorithm == 'RANDOM':
         num_moves = len(parent1.moves)
         moves = []
         for i in range(num_moves):
@@ -41,6 +41,7 @@ def child(parent1, parent2, algorithm):
                 moves.append(parent1.moves[i])
             else:
                 moves.append(parent2.moves[i])
+    return Participant(first_name, last_name, moves)
 
 def display_fitness():
     for p in participants:
@@ -50,3 +51,11 @@ def display_fitness():
 def display_population():
     for p in participants:
         p.display()
+
+sixth_day(2)
+participants.append(child(participants[0], participants[1], 'RANDOM'))
+
+display_population()
+
+
+
