@@ -16,20 +16,22 @@ seven_template = cv2.imread('seven.png', 0)
 ##text_window = {'top': 79, 'bottom': 114, 'left': 76, 'right': 294}
 
 #200% Zoom
-mon = {'top': 357, 'left': 577, 'width': 744, 'height': 373}
-text_window = {'top': 158, 'bottom': 227, 'left': 152, 'right': 588}
+mon = {'top': 350, 'left': 577, 'width': 744, 'height': 373}
+text_window = {'top': 165, 'bottom': 227, 'left': 152, 'right': 588}
 medal_window = {'top': 33, 'bottom': 43, 'left': 33, 'right': 43}
 
 def run():
 
     # Generate Initial Population
-    pop.sixth_day(10)
+    pop.sixth_day(30)
 
     generation = 0
 
     # Wait for User to Press 'Space' (Start)
     print ('Waiting for User to Start...')
     img = np.array(sct.grab(mon))
+   # cv2.imshow('img', img)
+    #cv2.waitKey(0)
     while participant_lost(img):
         img = np.array(sct.grab(mon))
     print ('Starting Evolution')
@@ -54,20 +56,20 @@ def run():
             score = read_score(img)
             participant.fitness = score
 
-        pop.display_fitness()
         pop.evolve()
-        time.sleep(1000)
+        pop.display_stats()
 
 def read_score(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Crop Text and Medal Windows
     img_text = img_gray[text_window['top']:text_window['bottom'], text_window['left']:text_window['right']]
-
+    #cv2.imshow('image', img_text)
+   # cv2.waitKey(0)
     # Binarize Text
     ret, text_binary = cv2.threshold(img_text, 127, 255, cv2.THRESH_BINARY)
 
-    text = str(pytesseract.image_to_string(text_binary))         
+    text = str(pytesseract.image_to_string(text_binary))
     text = text.replace(' ', '')
 
 ##    if '1' in text:
@@ -88,12 +90,15 @@ def read_score(img):
         raw_score = -1000
     return raw_score
 
+def save_population(filename):
+    with open(filename, 'w') as csvfile:
+        writer = csv.writer(delimiter=',')
+
 def participant_lost(img):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_medal = img_hsv[medal_window['top']:medal_window['bottom'], medal_window['left']:medal_window['right'], :]
     # Look for Yellow Medal
     medal_mean_hue = int(np.mean(np.mean(img_medal, axis=0), axis=0)[0] + .5)
-
     # Participant Lost, Detected Yellow Medal
     return medal_mean_hue == 30
 

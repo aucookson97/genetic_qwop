@@ -76,6 +76,14 @@ class Move():
         # Time to wait after move 
         self.time_release = time_release
 
+    def mutate(self):
+        keys = random.randint(0, 15)
+        time_press = min_time_press + random.random() * (max_time_press - min_time_press)
+        time_release = min_time_release + random.random() * (max_time_release - min_time_release)
+        self.keys = keys
+        self.time_press = time_press
+        self.time_release = time_release
+
     def execute(self):
         if self.keys & 8: #Q
             auto.keyDown('q')
